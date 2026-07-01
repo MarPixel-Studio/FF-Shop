@@ -155,13 +155,35 @@
             blocoTamanho.style.display = (categoria === 'calcados' || categoria === 'moda') ? 'block' : 'none';
         }
 
+        // Carrega os produtos enviando a senha se ela existir
         async function carregarProdutos() {
+            const token = document.getElementById('senhaAdmin').value;
+            
             try {
-                const res = await fetch(API_URL);
-                produtosLocais = await res.json();
-                renderizarListaAdmin();
+                // Rota corrigida para /api/produtos e adicionado o header de autorização
+                const res = await fetch(`${API_URL}/api/produtos`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'x-admin-token': token || '' // Envia vazio se não digitou ainda
+                    }
+                });
+
+                if (res.ok) {
+                    produtosLocais = await res.json();
+                    renderizarListaAdmin();
+                } else if (res.status === 401) {
+                    // Se não estiver autorizado, limpa a lista e mostra aviso discreto no console
+                    produtosLocais = [];
+                    document.getElementById('lista-admin-produtos').innerHTML = 
+                        '<p style="color:#d63031; text-align:center; padding:20px;"><i class="fa-solid fa-lock"></i> Digite a senha correta acima para listar os produtos.</p>';
+                } else {
+                    throw new Error("Erro desconhecido no servidor");
+                }
             } catch (err) {
-                console.error(err);
+                console.error("Falha ao conectar:", err);
+                document.getElementById('lista-admin-produtos').innerHTML = 
+                    '<p style="color:#777; text-align:center; padding:20px;">Erro de conexão com o servidor.</p>';
             }
         }
 
@@ -180,13 +202,18 @@
                     ? `<img src="${campoVisual}">`
                     : `<i class="fa-solid ${campoVisual}"></i>`;
 
+                // Tratamento caso o preço venha quebrado ou não seja número
+                const precoFormatado = typeof prod.preco === 'number' 
+                    ? prod.preco.toFixed(2).replace('.', ',') 
+                    : parseFloat(prod.preco || 0).toFixed(2).replace('.', ',');
+
                 container.innerHTML += `
                     <div class="item-admin">
                         <div class="item-info">
                             <div class="item-icon">${elementoVisual}</div>
                             <div class="item-detalhes">
                                 <p>${prod.nome}</p>
-                                <span>R$ ${prod.preco.toFixed(2).replace('.', ',')} | ${prod.categoria}</span>
+                                <span>R$ ${precoFormatado} | ${prod.categoria}</span>
                             </div>
                         </div>
                         <div class="item-acoes">
@@ -209,7 +236,6 @@
             document.getElementById('icone').value = prod.icone || prod.imagem || "";
             document.getElementById('descricao').value = prod.descricao || "";
 
-            // Preenche os campos de tamanho/voltagem se existirem salvos no JSON
             ajustarCamposEspecificos();
             document.getElementById('voltagem').value = prod.voltagem || "";
             document.getElementById('tamanho').value = prod.tamanho || "";
@@ -254,8 +280,6 @@
             const categoria = document.getElementById('categoria').value;
             const icone = document.getElementById('icone').value;
             const descricao = document.getElementById('descricao').value;
-            
-            // Pega as informações de tamanho e voltagem adicionadas
             const voltagem = document.getElementById('voltagem').value;
             const tamanho = document.getElementById('tamanho').value;
 
@@ -264,15 +288,15 @@
                 'x-admin-token': token 
             };
 
-            // Inclui as propriedades no envio para o JSON do backend
             const dadosProduto = { nome, preco, categoria, icone, descricao, voltagem, tamanho };
 
             try {
-                let url = API_URL;
+                // Rotas de salvamento e edição também corrigidas com /api/produtos
+                let url = `${API_URL}/api/produtos`;
                 let metodo = 'POST';
 
                 if (idExistente) {
-                    url = `${API_URL}/${idExistente}`;
+                    url = `${API_URL}/api/produtos/${idExistente}`;
                     metodo = 'PUT';
                 }
 
@@ -287,12 +311,12 @@
                     cancelarEdicao();
                     carregarProdutos();
                 } else {
-                    alert("Erro ao processar requisição no servidor.");
+                    alert("Erro ao processar requisição no servidor. Verifique a senha.");
                 }
 
             } catch (err) {
                 console.error(err);
-                alert("Falha de conexão com o servidor Node/Termux.");
+                alert("Falha de conexão com o servidor Railway.");
             }
         }
 
@@ -303,7 +327,8 @@
             if(!confirm("Deseja excluir este produto?")) return;
 
             try {
-                const res = await fetch(`${API_URL}/${id}`, { 
+                // Rota de exclusão corrigida com /api/produtos
+                const res = await fetch(`${API_URL}/api/produtos/${id}`, { 
                     method: 'DELETE',
                     headers: { 'x-admin-token': token }
                 });
@@ -312,16 +337,22 @@
                     if(document.getElementById('produtoId').value == id) cancelarEdicao();
                     carregarProdutos();
                 } else {
-                    alert("Erro ao excluir.");
+                    alert("Erro ao excluir. Verifique a senha.");
                 }
             } catch(err) {
                 console.error(err);
             }
         }
 
+        // EVENTO CRUCIAL: Faz a lista atualizar automaticamente enquanto você digita a senha!
+        document.getElementById('senhaAdmin').addEventListener('input', () => {
+            carregarProdutos();
+        });
+
         // Execuções iniciais
         ajustarCamposEspecificos();
         carregarProdutos();
     </script>
+    
 </body>
 </html>
