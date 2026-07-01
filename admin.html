@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel Admin - F&F shop</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --cor-principal: #6c5ce7;
+            --cor-principal-escura: #5442d1;
+            --cor-secundaria: #1e1e24;
+            --cor-fundo: #f5f5f7;
+            --cor-texto: #333333;
+            --branco: #ffffff;
+            --cinza-claro: #e0e0e0;
+            --azul-editar: #0984e3;
+            --vermelho-excluir: #d63031;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
+        body { background-color: var(--cor-fundo); color: var(--cor-texto); padding: 20px; }
+
+        .admin-container { max-width: 1000px; margin: 0 auto; }
+        header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; padding-bottom: 15px; border-bottom: 2px solid var(--cinza-claro); }
+        header h1 { color: var(--cor-secundaria); font-size: 26px; }
+        header h1 i { color: var(--cor-principal); }
+
+        .card-senha { background: var(--branco); padding: 15px 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); margin-bottom: 25px; }
+        .card-senha label { display: block; font-size: 14px; font-weight: bold; margin-bottom: 8px; color: var(--cor-secundaria); }
+        .card-senha input { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 15px; outline: none; }
+
+        .grid-admin { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; }
+
+        .card-form { background: var(--branco); padding: 25px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); height: max-content; }
+        .card-form h2 { font-size: 18px; margin-bottom: 20px; color: var(--cor-secundaria); display: flex; align-items: center; gap: 8px; }
+        
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; font-size: 14px; font-weight: 600; margin-bottom: 5px; color: #555; }
+        .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 15px; outline: none; font-family: inherit; }
+        .form-group textarea { resize: vertical; min-height: 90px; }
+
+        /* Campos Dinâmicos */
+        .campo-opcional { display: none; background: #f9f9fb; padding: 12px; border-left: 4px solid var(--cor-principal); border-radius: 4px; margin-bottom: 15px; }
+
+        .btn-salvar { background-color: var(--cor-principal); color: var(--branco); border: none; padding: 12px; width: 100%; border-radius: 4px; font-weight: bold; font-size: 16px; cursor: pointer; transition: background 0.2s; }
+        .btn-salvar:hover { background-color: var(--cor-principal-escura); }
+        .btn-cancelar { background-color: #b2bec3; color: var(--cor-secundaria); border: none; padding: 10px; width: 100%; border-radius: 4px; font-weight: bold; margin-top: 8px; cursor: pointer; display: none; text-align: center; }
+
+        .card-lista { background: var(--branco); padding: 25px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+        .card-lista h2 { font-size: 18px; margin-bottom: 20px; color: var(--cor-secundaria); }
+        
+        .lista-container { display: flex; flex-direction: column; gap: 10px; max-height: 600px; overflow-y: auto; }
+        .item-admin { display: flex; align-items: center; justify-content: space-between; padding: 12px; border: 1px solid #eee; border-radius: 6px; background: #fafafa; }
+        .item-info { display: flex; align-items: center; gap: 15px; flex: 1; }
+        .item-icon { width: 45px; height: 45px; background: #eee; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 20px; color: #777; overflow: hidden; }
+        .item-icon img { width: 100%; height: 100%; object-fit: contain; }
+        .item-detalhes { flex: 1; padding-right: 10px; }
+        .item-detalhes p { font-weight: bold; font-size: 14px; color: #333; margin-bottom: 2px; }
+        .item-detalhes span { font-size: 12px; color: #888; }
+
+        .item-acoes { display: flex; gap: 8px; }
+        .btn-acao-tabela { border: none; padding: 8px 12px; border-radius: 4px; color: white; cursor: pointer; font-size: 14px; }
+        .btn-editar { background-color: var(--azul-editar); }
+        .btn-excluir { background-color: var(--vermelho-excluir); }
+
+        @media (max-width: 768px) {
+            .grid-admin { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="admin-container">
+        <header>
+            <h1><i class="fa-solid fa-gauge"></i> Painel Administrativo - F&F</h1>
+            <a href="index.html" style="text-decoration: none; color: var(--cor-principal); font-weight: bold;"><i class="fa-solid fa-store"></i> Ver Vitrine</a>
+        </header>
+
+        <div class="card-senha">
+            <label for="senhaAdmin">Senha de Administrador:</label>
+            <input type="password" id="senhaAdmin" placeholder="Digite a senha padrão do servidor para autorizar alterações">
+        </div>
+
+        <div class="grid-admin">
+            <div class="card-form">
+                <h2 id="form-titulo"><i class="fa-solid fa-plus"></i> Cadastrar Novo Produto</h2>
+                <form id="formProduto" onsubmit="salvarProduto(event)">
+                    <input type="hidden" id="produtoId">
+
+                    <div class="form-group">
+                        <label for="nome">Nome do Produto</label>
+                        <input type="text" id="nome" required placeholder="Ex: Smartwatch Series 8">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="preco">Preço (R$)</label>
+                        <input type="text" id="preco" required placeholder="Ex: 199.90 ou 199,90">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="categoria">Categoria</label>
+                        <select id="categoria" required onchange="ajustarCamposEspecificos()">
+                            <option value="eletronico">Eletrônicos</option>
+                            <option value="calcados">Calçados</option>
+                            <option value="casa">Casa</option>
+                            <option value="moda">Moda</option>
+                            <option value="variedades">Variedades</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group campo-opcional" id="bloco-voltagem">
+                        <label for="voltagem">Opções de Voltagem (Separadas por vírgula)</label>
+                        <input type="text" id="voltagem" placeholder="Ex: Bivolt, 110v, 220v">
+                    </div>
+
+                    <div class="form-group campo-opcional" id="bloco-tamanho">
+                        <label for="tamanho">Opções de Tamanho (Separadas por vírgula)</label>
+                        <input type="text" id="tamanho" placeholder="Ex: 38, 39, 40, 41, M, G, GG">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="icone">Link da Imagem ou Ícone FontAwesome</label>
+                        <input type="text" id="icone" placeholder="Ex: https://link.com/imagem.png">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="descricao">Descrição do Produto (Aparece no menu ao clicar)</label>
+                        <textarea id="descricao" placeholder="Dê detalhes sobre o produto..."></textarea>
+                    </div>
+
+                    <button type="submit" class="btn-salvar" id="btn-submit-form">Cadastrar Produto</button>
+                    <button type="button" class="btn-cancelar" id="btn-cancelar-edit" onclick="cancelarEdicao()">Cancelar Edição</button>
+                </form>
+            </div>
+
+            <div class="card-lista">
+                <h2><i class="fa-solid fa-list"></i> Produtos Cadastrados</h2>
+                <div class="lista-container" id="lista-admin-produtos"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = "http://localhost:3000/api/produtos";
+        let produtosLocais = [];
+
+        // Mostra ou esconde campos dependendo da categoria selecionada
+        function ajustarCamposEspecificos() {
+            const categoria = document.getElementById('categoria').value;
+            const blocoVoltagem = document.getElementById('bloco-voltagem');
+            const blocoTamanho = document.getElementById('bloco-tamanho');
+
+            blocoVoltagem.style.display = (categoria === 'eletronico' || categoria === 'casa') ? 'block' : 'none';
+            blocoTamanho.style.display = (categoria === 'calcados' || categoria === 'moda') ? 'block' : 'none';
+        }
+
+        async function carregarProdutos() {
+            try {
+                const res = await fetch(API_URL);
+                produtosLocais = await res.json();
+                renderizarListaAdmin();
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        function renderizarListaAdmin() {
+            const container = document.getElementById('lista-admin-produtos');
+            container.innerHTML = '';
+
+            if(produtosLocais.length === 0) {
+                container.innerHTML = '<p style="color:#777; text-align:center; padding:20px;">Nenhum produto cadastrado.</p>';
+                return;
+            }
+
+            produtosLocais.forEach(prod => {
+                const campoVisual = prod.icone || prod.imagem || "fa-box";
+                const elementoVisual = campoVisual.startsWith('http') 
+                    ? `<img src="${campoVisual}">`
+                    : `<i class="fa-solid ${campoVisual}"></i>`;
+
+                container.innerHTML += `
+                    <div class="item-admin">
+                        <div class="item-info">
+                            <div class="item-icon">${elementoVisual}</div>
+                            <div class="item-detalhes">
+                                <p>${prod.nome}</p>
+                                <span>R$ ${prod.preco.toFixed(2).replace('.', ',')} | ${prod.categoria}</span>
+                            </div>
+                        </div>
+                        <div class="item-acoes">
+                            <button class="btn-acao-tabela btn-editar" onclick="prepararEdicao('${prod.id}')"><i class="fa-solid fa-pen"></i></button>
+                            <button class="btn-acao-tabela btn-excluir" onclick="excluirProduto('${prod.id}')"><i class="fa-solid fa-trash"></i></button>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function prepararEdicao(id) {
+            const prod = produtosLocais.find(p => String(p.id) === String(id));
+            if(!prod) return;
+
+            document.getElementById('produtoId').value = prod.id;
+            document.getElementById('nome').value = prod.nome;
+            document.getElementById('preco').value = prod.preco;
+            document.getElementById('categoria').value = prod.categoria;
+            document.getElementById('icone').value = prod.icone || prod.imagem || "";
+            document.getElementById('descricao').value = prod.descricao || "";
+
+            // Preenche os campos de tamanho/voltagem se existirem salvos no JSON
+            ajustarCamposEspecificos();
+            document.getElementById('voltagem').value = prod.voltagem || "";
+            document.getElementById('tamanho').value = prod.tamanho || "";
+
+            document.getElementById('form-titulo').innerHTML = `<i class="fa-solid fa-pen"></i> Editando Produto #${prod.id}`;
+            document.getElementById('btn-submit-form').innerText = "Salvar Alterações";
+            document.getElementById('btn-submit-form').style.backgroundColor = "var(--azul-editar)";
+            document.getElementById('btn-cancelar-edit').style.display = "block";
+            
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function cancelarEdicao() {
+            document.getElementById('formProduto').reset();
+            document.getElementById('produtoId').value = "";
+            ajustarCamposEspecificos();
+            document.getElementById('form-titulo').innerHTML = `<i class="fa-solid fa-plus"></i> Cadastrar Novo Produto`;
+            document.getElementById('btn-submit-form').innerText = "Cadastrar Produto";
+            document.getElementById('btn-submit-form').style.backgroundColor = "var(--cor-principal)";
+            document.getElementById('btn-cancelar-edit').style.display = "none";
+        }
+
+        async function salvarProduto(event) {
+            event.preventDefault();
+
+            const token = document.getElementById('senhaAdmin').value;
+            if(!token) {
+                alert("Por favor, digite a sua Senha de Administrador primeiro!");
+                return;
+            }
+
+            const idExistente = document.getElementById('produtoId').value;
+            const nome = document.getElementById('nome').value;
+            const precoTexto = document.getElementById('preco').value.replace(',', '.');
+            const preco = parseFloat(precoTexto);
+
+            if (isNaN(preco)) {
+                alert("Por favor, insira um preço válido.");
+                return;
+            }
+
+            const categoria = document.getElementById('categoria').value;
+            const icone = document.getElementById('icone').value;
+            const descricao = document.getElementById('descricao').value;
+            
+            // Pega as informações de tamanho e voltagem adicionadas
+            const voltagem = document.getElementById('voltagem').value;
+            const tamanho = document.getElementById('tamanho').value;
+
+            const headersPadrao = { 
+                'Content-Type': 'application/json',
+                'x-admin-token': token 
+            };
+
+            // Inclui as propriedades no envio para o JSON do backend
+            const dadosProduto = { nome, preco, categoria, icone, descricao, voltagem, tamanho };
+
+            try {
+                let url = API_URL;
+                let metodo = 'POST';
+
+                if (idExistente) {
+                    url = `${API_URL}/${idExistente}`;
+                    metodo = 'PUT';
+                }
+
+                const res = await fetch(url, {
+                    method: metodo,
+                    headers: headersPadrao,
+                    body: JSON.stringify(dadosProduto)
+                });
+
+                if(res.ok) {
+                    alert("Operação realizada com sucesso!");
+                    cancelarEdicao();
+                    carregarProdutos();
+                } else {
+                    alert("Erro ao processar requisição no servidor.");
+                }
+
+            } catch (err) {
+                console.error(err);
+                alert("Falha de conexão com o servidor Node/Termux.");
+            }
+        }
+
+        async function excluirProduto(id) {
+            const token = document.getElementById('senhaAdmin').value;
+            if(!token) return alert("Digite a Senha de Administrador!");
+
+            if(!confirm("Deseja excluir este produto?")) return;
+
+            try {
+                const res = await fetch(`${API_URL}/${id}`, { 
+                    method: 'DELETE',
+                    headers: { 'x-admin-token': token }
+                });
+                if(res.ok) {
+                    alert("Produto removido!");
+                    if(document.getElementById('produtoId').value == id) cancelarEdicao();
+                    carregarProdutos();
+                } else {
+                    alert("Erro ao excluir.");
+                }
+            } catch(err) {
+                console.error(err);
+            }
+        }
+
+        // Execuções iniciais
+        ajustarCamposEspecificos();
+        carregarProdutos();
+    </script>
+</body>
+</html>
